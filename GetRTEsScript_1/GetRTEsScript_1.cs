@@ -1,0 +1,155 @@
+/*
+****************************************************************************
+*  Copyright (c) 2023,  Skyline Communications NV  All Rights Reserved.    *
+****************************************************************************
+
+By using this script, you expressly agree with the usage terms and
+conditions set out below.
+This script and all related materials are protected by copyrights and
+other intellectual property rights that exclusively belong
+to Skyline Communications.
+
+A user license granted for this script is strictly for personal use only.
+This script may not be used in any way by anyone without the prior
+written consent of Skyline Communications. Any sublicensing of this
+script is forbidden.
+
+Any modifications to this script by the user are only allowed for
+personal use and within the intended purpose of the script,
+and will remain the sole responsibility of the user.
+Skyline Communications will not be responsible for any damages or
+malfunctions whatsoever of the script resulting from a modification
+or adaptation by the user.
+
+The content of this script is confidential information.
+The user hereby agrees to keep this confidential information strictly
+secret and confidential and not to disclose or reveal it, in whole
+or in part, directly or indirectly to any person, entity, organization
+or administration without the prior written consent of
+Skyline Communications.
+
+Any inquiries can be addressed to:
+
+	Skyline Communications NV
+	Ambachtenstraat 33
+	B-8870 Izegem
+	Belgium
+	Tel.	: +32 51 31 35 69
+	Fax.	: +32 51 31 01 29
+	E-mail	: info@skyline.be
+	Web		: www.skyline.be
+	Contact	: Ben Vandenberghe
+
+****************************************************************************
+Revision History:
+
+DATE		VERSION		AUTHOR			COMMENTS
+
+dd/mm/2023	1.0.0.1		XXX, Skyline	Initial version
+****************************************************************************
+*/
+
+namespace GetRTEsScript_1
+{
+	using System;
+	using System.Collections.Generic;
+	using System.Globalization;
+	using System.IO;
+	using System.Linq;
+	using System.Text;
+	using System.Xml;
+
+	using Skyline.DataMiner.Automation;
+	using Skyline.DataMiner.Net.Messages;
+
+	/// <summary>
+	/// Represents a DataMiner Automation script.
+	/// </summary>
+	public class Script
+	{
+		/// <summary>
+		/// The script entry point.
+		/// </summary>
+		/// <param name="engine">Link with SLAutomation process.</param>
+		public void Run(IEngine engine)
+		{
+			List<string> rtelineList;
+			rtelineList = new List<string>();
+
+			rtelineList = HelperClass.GetRTEs("RTE Count");
+			string string_numOfRTEs = rtelineList.Last();
+			int numOfRTEs = int.Parse(string_numOfRTEs);
+			engine.GenerateInformation("DMSSanityChecks|numOfRTEs: " + numOfRTEs);
+
+			engine.AddScriptOutput("Rtes", numOfRTEs.ToString());
+
+			string output_key_rte = "LineOfRTEs";
+			int count_r = 0;
+			foreach (string s in rtelineList)
+			{
+				if (s != null)
+				{
+					output_key_rte = output_key_rte + "_" + count_r;
+					engine.AddScriptOutput(output_key_rte, s);
+					count_r++;
+				}
+			}
+
+			List<string>hf_rtelineList;
+			hf_rtelineList = new List<string>();
+
+			hf_rtelineList = HelperClass.GetRTEs("HALFOPEN RTE");
+			string string_numOfHFRTEs = hf_rtelineList.Last();
+			int numOfHFRTEs = int.Parse(string_numOfHFRTEs);
+			engine.GenerateInformation("DMSSanityChecks|numOfHFRTEs: " + numOfHFRTEs);
+
+			engine.AddScriptOutput("HalfOpenRtes", numOfHFRTEs.ToString());
+
+			string output_key_hfrte = "LineOfHalfOpenRtes";
+			int count_hf = 0;
+			foreach (string shf in hf_rtelineList)
+			{
+				if (shf != null)
+				{
+					output_key_hfrte = output_key_hfrte + "_" + count_hf;
+					engine.AddScriptOutput(output_key_hfrte, shf);
+					count_hf++;
+				}
+			}
+		}
+
+		public class HelperClass
+		{
+			public static List<string> GetRTEs(string isRTEorHF)
+			{
+				string logFile = @"C:\Skyline DataMiner\logging\SLWatchdog2.txt";
+				Stream stream = File.Open(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+				DateTime endDate = DateTime.Now;
+				DateTime startDate = endDate.AddDays(-10);
+				int rteCount = 0;
+				List<string> saveRTEline;
+				saveRTEline = new List<string>();
+
+				using (StreamReader sr = new StreamReader(stream))
+				{
+					while (!sr.EndOfStream)
+					{
+						string line = sr.ReadLine();
+						if (line.Contains(isRTEorHF) && DateTime.TryParse(line.Substring(0, 19), out DateTime dateTime))
+						{
+							if (dateTime >= startDate && dateTime <= endDate)
+							{
+								rteCount++;
+								saveRTEline.Add(line);
+							}
+						}
+					}
+				}
+
+				saveRTEline.Add(rteCount.ToString());
+
+				return saveRTEline;
+			}
+		}
+	}
+}

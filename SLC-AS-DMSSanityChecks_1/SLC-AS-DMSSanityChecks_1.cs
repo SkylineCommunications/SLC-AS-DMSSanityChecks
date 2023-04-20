@@ -66,94 +66,23 @@ using Skyline.DataMiner.Net.Messages;
 /// <summary>
 /// DataMiner Script Class.
 /// </summary>
-public class Script
-{
-	public string fullFileName = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\DMSSanityChecks_" +
-			DateTime.Now.Year +
-			DateTime.Now.Month +
-			DateTime.Now.Day +
-			".csv";
-
-	public static string delimiter = ",";
-
-	/// <summary>
-	/// The Script entry point.
-	/// </summary>
-	/// <param name="engine">Link with SLAutomation process.</param>
-	public void Run(Engine engine)
-	{
-		Dictionary<string, string> results = new Dictionary<string, string>();
-		var dms = engine.GetDms();
-		var dmas = dms.GetAgents();
-
-		foreach (var dma in dmas)
-		{
-			string hostname = dma.HostName;
-			engine.GenerateInformation("DMSSanityChecks|hostname: " + hostname);
-			results.Add("hostname", hostname);
-
-			string version = dma.VersionInfo;
-			engine.GenerateInformation("DMSSanityChecks|version: " + version);
-			results.Add("version", version);
-
-			int nrOfElements = dma.GetElements().Count();
-			engine.GenerateInformation("DMSSanityChecks|nrOfElements: " + nrOfElements);
-			results.Add("nrOfElements", nrOfElements.ToString());
-
-			int nrOfServices = dma.GetServices().Count();
-			engine.GenerateInformation("DMSSanityChecks|nrOfServices: " + nrOfServices);
-			results.Add("nrOfServices", nrOfServices.ToString());
-		}
-
-		int nrOfActiveAlarms = HelperClass.GetActiveAlarms(engine);
-		engine.GenerateInformation("DMSSanityChecks|nrOfActiveAlarms: " + nrOfActiveAlarms);
-		results.Add("nrOfActiveAlarms", nrOfActiveAlarms.ToString());
-
-		int nrOfCriticals = HelperClass.GetCriticalActiveAlarms(engine);
-		engine.GenerateInformation("DMSSanityChecks|Criticals: " + nrOfCriticals);
-		results.Add("nrOfCriticals", nrOfCriticals.ToString());
-
-		int nrOfProtocols = dms.GetProtocols().Count();
-		engine.GenerateInformation("DMSSanityChecks|Protocols: " + nrOfProtocols);
-		results.Add("nrOfProtocols", nrOfProtocols.ToString());
-
-		//number of RTEs - can be retrieved from SLWatchdog2 by parsing the logfile
-
-		//count of users - can be retrieved from Security.xml
-		int nrOfUsers = HelperClass.GetNrOfUsers();
-		engine.GenerateInformation("DMSSanityChecks|nrOfUsers: " + nrOfUsers);
-		results.Add("nrOfUsers", nrOfUsers.ToString());
-
-		//backup - can be retrieved from slnetmessages but not clear
-
-		//offload - can be retrieved from db.xml
-		bool IsOffloadEnabled = HelperClass.IsDbOffloadEnabled();
-		engine.GenerateInformation("DMSSanityChecks|IsOffloadEnabled: " + IsOffloadEnabled);
-		results.Add("IsOffloadEnabled", IsOffloadEnabled.ToString());
-
-		File.WriteAllText(fullFileName,
-				$"Metric{delimiter}" +
-				$"Value{delimiter}" + "\r\n");
-
-		File.AppendAllLines(fullFileName, results.Select(x => x.Key + delimiter + x.Value + delimiter));
-	}
-}
+///
 
 namespace Helpers
 {
 	public class DMA
 	{
-		public int dmaId;
-		public string dmaName;
-		public string ipAddr;
-		public bool isFailover;
+		private int dmaId;
+		private string dmaName;
+		private string ipAddr;
+		private bool isFailover;
 
-		public DMA(string DmaName, string IpAddr, bool IsFailover, int DmaId)
+		public DMA(string dmaName, string ipAddr, bool isFailover, int dmaId)
 		{
-			this.dmaName = DmaName;
-			this.ipAddr = IpAddr;
-			this.isFailover = IsFailover;
-			this.dmaId = DmaId;
+			this.dmaName = dmaName;
+			this.ipAddr = ipAddr;
+			this.isFailover = isFailover;
+			this.dmaId = dmaId;
 		}
 	}
 
@@ -161,24 +90,25 @@ namespace Helpers
 	{
 		public static bool IsDbOffloadEnabled()
 		{
-			string dbXml= File.ReadAllText(@"C:\Skyline DataMiner\db.xml");
+			string filedbXml = File.ReadAllText(@"C:\Skyline DataMiner\db.xml");
 
 			// Load the XML document
 			XmlDocument doc = new XmlDocument();
-			doc.LoadXml(dbXml); // where xml is a string containing the XML document
+			doc.LoadXml(filedbXml); // where xml is a string containing the XML document
 
 			// Create a namespace manager for resolving the default namespace
-			XmlNamespaceManager nsMgr = new XmlNamespaceManager(doc.NameTable);
-			nsMgr.AddNamespace("db", "http://www.skyline.be/config/db");
+			XmlNamespaceManager namespaceMgr = new XmlNamespaceManager(doc.NameTable);
+			namespaceMgr.AddNamespace("db", "http://www.skyline.be/config/db");
 
 			// Select all User elements using an XPath expression and the namespace manager
-			XmlNodeList offloadItems = doc.SelectNodes("//db:Offload", nsMgr);
+			XmlNodeList offloadItems = doc.SelectNodes("//db:Offload", namespaceMgr);
 
 			return offloadItems.Count > 0;
 		}
-		public static int GetNrOfUsers()
+
+		public static int GetnumOfUsers()
 		{
-			//Only counts users in local DMA that runs the script
+			// Only counts users in local DMA that runs the script
 			string usersXml = File.ReadAllText(@"C:\Skyline DataMiner\Security.xml");
 
 			// Load the XML document
@@ -186,20 +116,21 @@ namespace Helpers
 			doc.LoadXml(usersXml); // where xml is a string containing the XML document
 
 			// Create a namespace manager for resolving the default namespace
-			XmlNamespaceManager nsMgr = new XmlNamespaceManager(doc.NameTable);
-			nsMgr.AddNamespace("s", "http://www.skyline.be/config/security");
+			XmlNamespaceManager namespaceMgr = new XmlNamespaceManager(doc.NameTable);
+			namespaceMgr.AddNamespace("s", "http://www.skyline.be/config/security");
 
 			// Select all User elements using an XPath expression and the namespace manager
-			XmlNodeList userNodes = doc.SelectNodes("//s:User", nsMgr);
+			XmlNodeList userNodes = doc.SelectNodes("//s:User", namespaceMgr);
 
 			// Count the number of User elements
 			int userCount = userNodes.Count;
 
 			return userCount;
 		}
+
 		public static void GetBackupSettings(Engine engine)
 		{
-			//TODO
+			// TODO
 		}
 
 		public static int GetActiveAlarms(Engine engine)
@@ -208,29 +139,18 @@ namespace Helpers
 			return ((ActiveAlarmsResponseMessage)responses.First()).ActiveAlarms.Count(x => x.Source == "DataMiner System");
 		}
 
-		public static int GetCriticalActiveAlarms(Engine engine)
+		// method used to calculate all the alarms types counts (Errors, Timeouts, Critical, Major, Minor, Warning)
+		public static int GetTypeActiveAlarms(Engine engine, string alarmtype)
 		{
 			DMSMessage[] responses = engine.SendSLNetMessage(new GetActiveAlarmsMessage());
-			return ((ActiveAlarmsResponseMessage)responses.First()).ActiveAlarms.Count(x => x.Severity == "Critical");
+			return ((ActiveAlarmsResponseMessage)responses.First()).ActiveAlarms.Count(x => x.Severity == alarmtype);
 		}
 
-		public static int GetTimeoutActiveAlarms(Engine engine)
-		{
-			DMSMessage[] responses = engine.SendSLNetMessage(new GetActiveAlarmsMessage());
-			return ((ActiveAlarmsResponseMessage)responses.First()).ActiveAlarms.Count(x => x.SeverityID == 7);
-		}
-
-		public static int GetErrorActiveAlarms(Engine engine)
-		{
-			DMSMessage[] responses = engine.SendSLNetMessage(new GetActiveAlarmsMessage());
-			return ((ActiveAlarmsResponseMessage)responses.First()).ActiveAlarms.Count(x => x.Severity == "Error");
-		}
-
-		//Let's use IDms instead of this. Just keeping it to be used as an example on how to use SendSLNetMessage
+		// Let's use IDms instead of this. Just keeping it to be used as an example on how to use SendSLNetMessage
 		public static DMA[] LookupForDmaIpAddress(Engine engine)
 		{
 			List<DMA> dmas = new List<DMA>();
-			DMSMessage[] responses = engine.SendSLNetMessage(new GetInfoMessage(-1, InfoType.DataMinerInfo, ""));
+			DMSMessage[] responses = engine.SendSLNetMessage(new GetInfoMessage(-1, InfoType.DataMinerInfo, string.Empty));
 
 			foreach (var response in responses)
 			{
@@ -246,7 +166,7 @@ namespace Helpers
 			return dmas.ToArray();
 		}
 
-		public static Skyline.DataMiner.Net.Messages.DMSMessage SLNet_Advanced_SetDataMinerInfoMessage(Engine engine, int ibInfo1, int ibInfo2, int iDataMinerID, int iElementID, int iHostingDataMinerID, int iIInfo1, int iIInfo2, Skyline.DataMiner.Net.Messages.PSA psa1, Skyline.DataMiner.Net.Messages.PSA psa2, Skyline.DataMiner.Net.Messages.PUIA puia1, Skyline.DataMiner.Net.Messages.PUIA puia2, Skyline.DataMiner.Net.Messages.SA sa1, Skyline.DataMiner.Net.Messages.SA sa2, string sStrInfo1, string sStrInfo2, Skyline.DataMiner.Net.Messages.UIA uia1, Skyline.DataMiner.Net.Messages.UIA uia2, int iWhat)
+		public static Skyline.DataMiner.Net.Messages.DMSMessage SLNet_Advanced_SetDataMinerInfoMessage(Engine engine, int imbInfo1, int imbInfo2, int iDataMinerID, int iElementID, int iHostingDataMinerID, int iIInfo1, int iIInfo2, Skyline.DataMiner.Net.Messages.PSA psa1, Skyline.DataMiner.Net.Messages.PSA psa2, Skyline.DataMiner.Net.Messages.PUIA puia1, Skyline.DataMiner.Net.Messages.PUIA puia2, Skyline.DataMiner.Net.Messages.SA sa1, Skyline.DataMiner.Net.Messages.SA sa2, string sStrInfo1, string sStrInfo2, Skyline.DataMiner.Net.Messages.UIA uia1, Skyline.DataMiner.Net.Messages.UIA uia2, int iWhat)
 		{
 			// Define the container for the response from the SLNet call
 			Skyline.DataMiner.Net.Messages.DMSMessage responseDataMinerInfoMessage = null;
@@ -257,8 +177,8 @@ namespace Helpers
 				Skyline.DataMiner.Net.Messages.Advanced.SetDataMinerInfoMessage dataminerInfoMessage = new Skyline.DataMiner.Net.Messages.Advanced.SetDataMinerInfoMessage();
 
 				// Setting the request message
-				dataminerInfoMessage.bInfo1 = ibInfo1;
-				dataminerInfoMessage.bInfo2 = ibInfo2;
+				dataminerInfoMessage.bInfo1 = imbInfo1;
+				dataminerInfoMessage.bInfo2 = imbInfo2;
 				dataminerInfoMessage.DataMinerID = iDataMinerID;
 				dataminerInfoMessage.ElementID = iElementID;
 				dataminerInfoMessage.HostingDataMinerID = iHostingDataMinerID;
@@ -279,14 +199,170 @@ namespace Helpers
 				// Via SLNet, we send the SLNet message
 				responseDataMinerInfoMessage = Engine.SLNet.SendMessage(dataminerInfoMessage).First();
 			}// End try
-
 			catch (Exception exception)
 			{
 				engine.GenerateInformation("[ERROR]|SLNet_Advanced_SetDataMinerInfoMessage|Exception:" + exception.ToString());
 			}// End catch
 
 			return responseDataMinerInfoMessage;
-
 		}// End method SLNet_Advanced_SetDataMinerInfoMessage
+	}
+}
+
+public class Script
+{
+	private static string delimiter = ",";
+
+	private string csvFileName = DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + "_" + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
+
+	private string fullFileName = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\DMSSanityChecks_" + DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + "_" + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
+
+	/// <summary>
+	/// The Script entry point.
+	/// </summary>
+	/// <param name="engine">Link with SLAutomation process.</param>
+	public void Run(Engine engine)
+	{
+		Dictionary<string, string> results = new Dictionary<string, string>();
+		var dms = engine.GetDms();
+		var dmas = dms.GetAgents();
+
+		results.Add(" ", String.Empty);
+
+		foreach (var dma in dmas)
+		{
+			string hostname = dma.HostName;
+			// engine.GenerateInformation("DMSSanityChecks|hostname: " + hostname);
+			results.Add("hostname", hostname);
+
+			int dma_ID = dma.Id;
+			// engine.GenerateInformation("DMSSanityChecks|hostname: " + hostname);
+			results.Add("DMA_ID", dma_ID.ToString());
+
+			string version = dma.VersionInfo;
+			// engine.GenerateInformation("DMSSanityChecks|version: " + version);
+			results.Add("version", version);
+
+			int numOfElements = dma.GetElements().Count();
+			// engine.GenerateInformation("DMSSanityChecks|nrOfElements: " + numOfElements);
+			results.Add("nrOfElements", numOfElements.ToString());
+
+			int numOfServices = dma.GetServices().Count();
+			// engine.GenerateInformation("DMSSanityChecks|numOfServices: " + numOfServices);
+			results.Add("numOfServices", numOfServices.ToString());
+
+
+			// Get RTEs and HF_RTEs
+			Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptMessage = new ExecuteScriptMessage()
+			{
+				DataMinerID = dma.Id,// DMA ID
+				ScriptName = "GetRTEsScript",
+				Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
+			};
+
+			var response = Engine.SLNet.SendSingleResponseMessage(scriptMessage) as ExecuteScriptResponseMessage;
+			var scriptResult = response?.ScriptOutput;
+
+			foreach (var item in scriptResult)
+			{
+				if (item.Key == "Rtes")
+				{
+					results.Add("numOfRtes", item.Value);
+				}
+				if (item.Key == "HalfOpenRtes")
+				{
+					results.Add("numOfHalfOpenRtes", item.Value);
+				}
+
+				if (item.Key.Contains("LineOfRTEs"))
+				{
+					results.Add(item.Key, item.Value);
+				}
+
+				if (item.Key.Contains("LineOfHalfOpenRtes"))
+				{
+					results.Add(item.Key, item.Value);
+				}
+			}
+
+
+			// Crashdumps and memory dumps
+
+
+			//Log levels
+
+
+		}
+
+		results.Add("  ", String.Empty);
+		results.Add("DMS", "Detailed Information about the DMS");
+
+		int numOfActiveAlarms = HelperClass.GetActiveAlarms(engine);
+		// engine.GenerateInformation("DMSSanityChecks|numOfActiveAlarms: " + numOfActiveAlarms);
+		results.Add("numOfActiveAlarms", numOfActiveAlarms.ToString());
+
+		int numOfError = HelperClass.GetTypeActiveAlarms(engine, "Error");
+		// engine.GenerateInformation("DMSSanityChecks|Errors: " + numOfError);
+		results.Add("numOfError", numOfError.ToString());
+
+		int numOfTimeout = HelperClass.GetTypeActiveAlarms(engine, "Timeout");
+		// engine.GenerateInformation("DMSSanityChecks|Timeouts: " + numOfTimeout);
+		results.Add("numOfTimeout", numOfTimeout.ToString());
+
+		int numOfCriticals = HelperClass.GetTypeActiveAlarms(engine, "Critical");
+		// engine.GenerateInformation("DMSSanityChecks|Criticals: " + numOfCriticals);
+		results.Add("numOfCritical", numOfCriticals.ToString());
+
+		int numOfMajor = HelperClass.GetTypeActiveAlarms(engine, "Major");
+		// engine.GenerateInformation("DMSSanityChecks|Majors: " + numOfMajor);
+		results.Add("numOfMajor", numOfMajor.ToString());
+
+		int numOfMinor = HelperClass.GetTypeActiveAlarms(engine, "Minor");
+		// engine.GenerateInformation("DMSSanityChecks|Minors: " + numOfMinor);
+		results.Add("numOfMinor", numOfMinor.ToString());
+
+		int numOfWarning = HelperClass.GetTypeActiveAlarms(engine, "Warning");
+		// engine.GenerateInformation("DMSSanityChecks|Warnings: " + numOfWarning);
+		results.Add("numOfWarning", numOfWarning.ToString());
+
+		int numOfNotices = HelperClass.GetTypeActiveAlarms(engine, "Notice");
+		// engine.GenerateInformation("DMSSanityChecks|Notices: " + numOfNotices);
+		results.Add("numOfNotices", numOfNotices.ToString());
+
+		int numOfProtocols = dms.GetProtocols().Count();
+		// engine.GenerateInformation("DMSSanityChecks|Protocols: " + numOfProtocols);
+		results.Add("numOfProtocols", numOfProtocols.ToString());
+
+		// count of users - can be retrieved from Security.xml
+		int numOfUsers = HelperClass.GetnumOfUsers();
+		// engine.GenerateInformation("DMSSanityChecks|numOfUsers: " + numOfUsers);
+		results.Add("numOfUsers", numOfUsers.ToString());
+
+		// backup - can be retrieved from slnetmessages but not clear
+
+		// offload - can be retrieved from db.xml
+		bool isOffloadEnabled = HelperClass.IsDbOffloadEnabled();
+		// engine.GenerateInformation("DMSSanityChecks|isOffloadEnabled: " + isOffloadEnabled);
+		results.Add("isOffloadEnabled", isOffloadEnabled.ToString());
+
+		File.WriteAllText(fullFileName,$"Metric{delimiter}" + $"Value{delimiter}" + "\r\n");
+
+		File.AppendAllLines(fullFileName, results.Select(x => x.Key + delimiter + x.Value + delimiter));
+
+		engine.SendSLNetMessage(
+		 new SendEmailMessage
+		 {
+			 To = "carolina.costa@skyline.be",
+			 Body = "This an example e-mail! :)",
+			 IsHtml = false,
+			 Attachments = new[]
+		 {
+		 new EmailAttachment
+		 {
+			 Data = File.ReadAllBytes(fullFileName),
+			 FileName = csvFileName,
+		 },
+		 },
+		 });
 	}
 }
