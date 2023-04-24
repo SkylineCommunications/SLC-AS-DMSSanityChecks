@@ -213,9 +213,9 @@ public class Script
 {
 	private static string delimiter = ",";
 
-	private string csvFileName = DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + "_" + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
+	private string csvFileName = DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + " " + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
 
-	private string fullFileName = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\DMSSanityChecks_" + DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + "_" + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
+	private string fullFileName = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\DMSSanityChecks_" + DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + " " + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
 
 	/// <summary>
 	/// The Script entry point.
@@ -251,19 +251,18 @@ public class Script
 			// engine.GenerateInformation("DMSSanityChecks|numOfServices: " + numOfServices);
 			results.Add("numOfServices", numOfServices.ToString());
 
-
 			// Get RTEs and HF_RTEs
-			Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptMessage = new ExecuteScriptMessage()
+			Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptRTEMessage = new ExecuteScriptMessage()
 			{
 				DataMinerID = dma.Id,// DMA ID
 				ScriptName = "GetRTEsScript",
 				Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
 			};
 
-			var response = Engine.SLNet.SendSingleResponseMessage(scriptMessage) as ExecuteScriptResponseMessage;
-			var scriptResult = response?.ScriptOutput;
+			var response_RTE = Engine.SLNet.SendSingleResponseMessage(scriptRTEMessage) as ExecuteScriptResponseMessage;
+			var scriptRTEResult = response_RTE?.ScriptOutput;
 
-			foreach (var item in scriptResult)
+			foreach (var item in scriptRTEResult)
 			{
 				if (item.Key == "Rtes")
 				{
@@ -283,14 +282,35 @@ public class Script
 				{
 					results.Add(item.Key, item.Value);
 				}
+
+				// CrashDumps and MiniDumps
+				if (item.Key.Contains("CrashDumps"))
+				{
+					results.Add(item.Key, item.Value);
+				}
+
+				if (item.Key.Contains("MiniDumps"))
+				{
+					results.Add(item.Key, item.Value);
+				}
 			}
 
-
 			// Crashdumps and memory dumps
+			//Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptCrashDumpMessage = new ExecuteScriptMessage()
+			//{
+			//	DataMinerID = dma.Id,// DMA ID
+			//	ScriptName = "GetCrashdumpScript",
+			//	Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
+			//};
 
+			//var response_Dumps = Engine.SLNet.SendSingleResponseMessage(scriptCrashDumpMessage) as ExecuteScriptResponseMessage;
+			//var scriptCrashResult = response_Dumps?.ScriptOutput;
 
-			//Log levels
+			//engine.GenerateInformation(scriptCrashResult.ToString());
 
+			// results.Add("numOfCrashDumps", scriptCrashResult.Keys("CrashDumps"));
+
+			// Log levels
 
 		}
 

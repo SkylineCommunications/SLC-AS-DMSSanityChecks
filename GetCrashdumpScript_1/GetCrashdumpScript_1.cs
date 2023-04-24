@@ -49,18 +49,14 @@ dd/mm/2023	1.0.0.1		XXX, Skyline	Initial version
 ****************************************************************************
 */
 
-namespace GetRTEsScript_1
+namespace GetCrashdumpScript_1
 {
 	using System;
 	using System.Collections.Generic;
 	using System.Globalization;
 	using System.IO;
-	using System.Linq;
 	using System.Text;
-	using System.Xml;
-
 	using Skyline.DataMiner.Automation;
-	using Skyline.DataMiner.Net.Messages;
 
 	/// <summary>
 	/// Represents a DataMiner Automation script.
@@ -73,52 +69,8 @@ namespace GetRTEsScript_1
 		/// <param name="engine">Link with SLAutomation process.</param>
 		public void Run(IEngine engine)
 		{
-			List<string> rtelineList;
-			rtelineList = new List<string>();
 
-			rtelineList = HelperClass.GetRTEs("RTE Count");
-			string string_numOfRTEs = rtelineList.Last();
-			int numOfRTEs = int.Parse(string_numOfRTEs);
-			// engine.GenerateInformation("DMSSanityChecks|numOfRTEs: " + numOfRTEs);
-
-			engine.AddScriptOutput("Rtes", numOfRTEs.ToString());
-
-			string output_key_rte = "LineOfRTEs";
-			int count_r = 0;
-			foreach (string s in rtelineList)
-			{
-				if (s != null)
-				{
-					output_key_rte = output_key_rte + "_" + count_r;
-					engine.AddScriptOutput(output_key_rte, s);
-					count_r++;
-				}
-			}
-
-			List<string>hf_rtelineList;
-			hf_rtelineList = new List<string>();
-
-			hf_rtelineList = HelperClass.GetRTEs("HALFOPEN RTE");
-			string string_numOfHFRTEs = hf_rtelineList.Last();
-			int numOfHFRTEs = int.Parse(string_numOfHFRTEs);
-			// engine.GenerateInformation("DMSSanityChecks|numOfHFRTEs: " + numOfHFRTEs);
-
-			engine.AddScriptOutput("HalfOpenRtes", numOfHFRTEs.ToString());
-
-			string output_key_hfrte = "LineOfHalfOpenRtes";
-			int count_hf = 0;
-			foreach (string shf in hf_rtelineList)
-			{
-				if (shf != null)
-				{
-					output_key_hfrte = output_key_hfrte + "_" + count_hf;
-					engine.AddScriptOutput(output_key_hfrte, shf);
-					count_hf++;
-				}
-			}
-
-			// Crashdumps and Minidumps
-			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 50);
+			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 10);
 			int minidumpsCount = HelperClass.GetDumpsforLastDays("Mini", 10);
 
 			engine.AddScriptOutput("CrashDumps", crashdumpsCount.ToString());
@@ -128,39 +80,9 @@ namespace GetRTEsScript_1
 
 		public class HelperClass
 		{
-			public static List<string> GetRTEs(string isRTEorHF)
-			{
-				string logFile = @"C:\Skyline DataMiner\logging\SLWatchdog2.txt";
-				Stream stream = File.Open(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-				DateTime endDate = DateTime.Now;
-				DateTime startDate = endDate.AddDays(-10);
-				int rteCount = 0;
-				List<string> saveRTEline;
-				saveRTEline = new List<string>();
-
-				using (StreamReader sr = new StreamReader(stream))
-				{
-					while (!sr.EndOfStream)
-					{
-						string line = sr.ReadLine();
-						if (line.Contains(isRTEorHF) && DateTime.TryParse(line.Substring(0, 19), out DateTime dateTime))
-						{
-							if (dateTime >= startDate && dateTime <= endDate)
-							{
-								rteCount++;
-								saveRTEline.Add(line);
-							}
-						}
-					}
-				}
-
-				saveRTEline.Add(rteCount.ToString());
-
-				return saveRTEline;
-			}
-
 			public static int GetDumpsforLastDays(string isCrashOrMini, int numOfDays)
 			{
+
 				int count = 0;
 				DateTime fromDate = DateTime.Now.AddDays(-numOfDays);
 				string directoryPath = String.Empty;
