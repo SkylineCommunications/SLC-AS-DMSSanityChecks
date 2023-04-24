@@ -1,4 +1,24 @@
-/*
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<DMSScript options="272" xmlns="http://www.skyline.be/automation">
+	<Name>GetRTEsandDumpsScript</Name>
+	<Description></Description>
+	<Type>Automation</Type>
+	<Author>SKYLINE2\CarolinaCO</Author>
+	<CheckSets>FALSE</CheckSets>
+	<Folder></Folder>
+
+	<Protocols>
+	</Protocols>
+
+	<Memory>
+	</Memory>
+
+	<Parameters>
+	</Parameters>
+
+	<Script>
+		<Exe id="1" type="csharp">
+			<Value><![CDATA[/*
 ****************************************************************************
 *  Copyright (c) 2023,  Skyline Communications NV  All Rights Reserved.    *
 ****************************************************************************
@@ -49,7 +69,7 @@ dd/mm/2023	1.0.0.1		XXX, Skyline	Initial version
 ****************************************************************************
 */
 
-namespace GetRTEsScript_1
+namespace GetRTEsandDumpsScript_1
 {
 	using System;
 	using System.Collections.Generic;
@@ -194,4 +214,9 @@ namespace GetRTEsScript_1
 			}
 		}
 	}
-}
+}]]></Value>
+			<!--<Param type="debug">true</Param>-->
+			<Message></Message>
+		</Exe>
+	</Script>
+</DMSScript>

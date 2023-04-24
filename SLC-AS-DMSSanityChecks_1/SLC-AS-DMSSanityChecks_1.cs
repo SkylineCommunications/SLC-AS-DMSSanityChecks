@@ -255,7 +255,7 @@ public class Script
 			Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptRTEMessage = new ExecuteScriptMessage()
 			{
 				DataMinerID = dma.Id,// DMA ID
-				ScriptName = "GetRTEsScript",
+				ScriptName = "GetRTEsandDumpsScript",
 				Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
 			};
 
@@ -308,9 +308,11 @@ public class Script
 
 			//engine.GenerateInformation(scriptCrashResult.ToString());
 
-			// results.Add("numOfCrashDumps", scriptCrashResult.Keys("CrashDumps"));
+			// results.Add("numOfCrashDumps", scriptCrashResult.Where.Keys("CrashDumps"));
 
 			// Log levels
+
+			//TO DO
 
 		}
 
