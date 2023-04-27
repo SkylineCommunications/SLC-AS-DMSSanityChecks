@@ -83,17 +83,9 @@ namespace GetRTEsandDumpsScript_1
 
 			engine.AddScriptOutput("Rtes", numOfRTEs.ToString());
 
-			string output_key_rte = "LineOfRTEs";
-			int count_r = 0;
-			foreach (string s in rtelineList)
-			{
-				if (s != null)
-				{
-					output_key_rte = output_key_rte + "_" + count_r;
-					engine.AddScriptOutput(output_key_rte, s);
-					count_r++;
-				}
-			}
+			engine.AddScriptOutput(
+				$"LineOfRTEs",
+				string.Join("\n",rtelineList.Where(x => !string.IsNullOrEmpty(x))));
 
 			List<string>hf_rtelineList;
 			hf_rtelineList = new List<string>();
@@ -105,17 +97,16 @@ namespace GetRTEsandDumpsScript_1
 
 			engine.AddScriptOutput("HalfOpenRtes", numOfHFRTEs.ToString());
 
-			string output_key_hfrte = "LineOfHalfOpenRtes";
-			int count_hf = 0;
+			StringBuilder hrtes = new StringBuilder();
 			foreach (string shf in hf_rtelineList)
 			{
 				if (shf != null)
 				{
-					output_key_hfrte = output_key_hfrte + "_" + count_hf;
-					engine.AddScriptOutput(output_key_hfrte, shf);
-					count_hf++;
+					hrtes.AppendLine($"{shf}");
 				}
 			}
+
+			engine.AddScriptOutput($"LineOfHalfOpenRtes", hrtes.ToString());
 
 			// Crashdumps and Minidumps
 			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 10);
@@ -140,6 +131,7 @@ namespace GetRTEsandDumpsScript_1
 
 				using (StreamReader sr = new StreamReader(stream))
 				{
+					string previousLine = String.Empty;
 					while (!sr.EndOfStream)
 					{
 						string line = sr.ReadLine();
@@ -148,9 +140,11 @@ namespace GetRTEsandDumpsScript_1
 							if (dateTime >= startDate && dateTime <= endDate)
 							{
 								rteCount++;
-								saveRTEline.Add(line);
+								saveRTEline.Add(previousLine);
 							}
 						}
+
+						previousLine = line;
 					}
 				}
 

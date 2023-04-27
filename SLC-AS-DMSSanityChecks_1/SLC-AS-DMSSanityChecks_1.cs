@@ -213,9 +213,9 @@ public class Script
 {
 	private static string delimiter = ",";
 
-	private string csvFileName = DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + " " + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
+	private string csvFileName = "DMSSanityChecks_" + DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + " " + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
 
-	private string fullFileName = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\DMSSanityChecks_" + DateTime.Now.Day + "_" + DateTime.Now.Month + "_" + DateTime.Now.Year + " " + DateTime.Now.Hour + "h" + DateTime.Now.Minute + "m" + ".csv";
+	private string filePath = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\";
 
 	/// <summary>
 	/// The Script entry point.
@@ -227,94 +227,26 @@ public class Script
 		var dms = engine.GetDms();
 		var dmas = dms.GetAgents();
 
+		int numOfDMAs = dmas.Count();
+
 		results.Add(" ", String.Empty);
+
+		var header = $"hostname,DMA_ID,Version,Nr Elements,Nr Services,Nr RTEs,Line of RTE,Nr Half Open,Line of Half Open,Nr Crash Dumps, Nr of Mini Dumps";
+		var lines = new List<string>();
 
 		foreach (var dma in dmas)
 		{
-			string hostname = dma.HostName;
-			// engine.GenerateInformation("DMSSanityChecks|hostname: " + hostname);
-			results.Add("hostname", hostname);
+			var rte = GetRteInfo(dma);
 
-			int dma_ID = dma.Id;
-			// engine.GenerateInformation("DMSSanityChecks|hostname: " + hostname);
-			results.Add("DMA_ID", dma_ID.ToString());
+			engine.GenerateInformation(string.Join(";", rte.Keys));
 
-			string version = dma.VersionInfo;
-			// engine.GenerateInformation("DMSSanityChecks|version: " + version);
-			results.Add("version", version);
-
-			int numOfElements = dma.GetElements().Count();
-			// engine.GenerateInformation("DMSSanityChecks|nrOfElements: " + numOfElements);
-			results.Add("nrOfElements", numOfElements.ToString());
-
-			int numOfServices = dma.GetServices().Count();
-			// engine.GenerateInformation("DMSSanityChecks|numOfServices: " + numOfServices);
-			results.Add("numOfServices", numOfServices.ToString());
-
-			// Get RTEs and HF_RTEs
-			Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptRTEMessage = new ExecuteScriptMessage()
-			{
-				DataMinerID = dma.Id,// DMA ID
-				ScriptName = "GetRTEsandDumpsScript",
-				Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
-			};
-
-			var response_RTE = Engine.SLNet.SendSingleResponseMessage(scriptRTEMessage) as ExecuteScriptResponseMessage;
-			var scriptRTEResult = response_RTE?.ScriptOutput;
-
-			foreach (var item in scriptRTEResult)
-			{
-				if (item.Key == "Rtes")
-				{
-					results.Add("numOfRtes", item.Value);
-				}
-				if (item.Key == "HalfOpenRtes")
-				{
-					results.Add("numOfHalfOpenRtes", item.Value);
-				}
-
-				if (item.Key.Contains("LineOfRTEs"))
-				{
-					results.Add(item.Key, item.Value);
-				}
-
-				if (item.Key.Contains("LineOfHalfOpenRtes"))
-				{
-					results.Add(item.Key, item.Value);
-				}
-
-				// CrashDumps and MiniDumps
-				if (item.Key.Contains("CrashDumps"))
-				{
-					results.Add(item.Key, item.Value);
-				}
-
-				if (item.Key.Contains("MiniDumps"))
-				{
-					results.Add(item.Key, item.Value);
-				}
-			}
-
-			// Crashdumps and memory dumps
-			//Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptCrashDumpMessage = new ExecuteScriptMessage()
-			//{
-			//	DataMinerID = dma.Id,// DMA ID
-			//	ScriptName = "GetCrashdumpScript",
-			//	Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
-			//};
-
-			//var response_Dumps = Engine.SLNet.SendSingleResponseMessage(scriptCrashDumpMessage) as ExecuteScriptResponseMessage;
-			//var scriptCrashResult = response_Dumps?.ScriptOutput;
-
-			//engine.GenerateInformation(scriptCrashResult.ToString());
-
-			// results.Add("numOfCrashDumps", scriptCrashResult.Where.Keys("CrashDumps"));
-
-			// Log levels
-
-			//TO DO
+			lines.Add($"{dma.HostName},{dma.Id},{dma.VersionInfo},{dma.GetElements().Count},{dma.GetServices().Count},{rte["Rtes"]},{rte["HalfOpenRtes"]},{rte[$"LineOfRTEs"]},{rte[$"LineOfHalfOpenRtes"]},{rte["CrashDumps"]},{rte["MiniDumps"]}");
 
 		}
+
+		var fullFileName = $"{filePath}{csvFileName}";
+		File.WriteAllText(fullFileName, header + "\r\n");
+		File.AppendAllLines(fullFileName, lines);
 
 		results.Add("  ", String.Empty);
 		results.Add("DMS", "Detailed Information about the DMS");
@@ -351,7 +283,7 @@ public class Script
 		// engine.GenerateInformation("DMSSanityChecks|Notices: " + numOfNotices);
 		results.Add("numOfNotices", numOfNotices.ToString());
 
-		int numOfProtocols = dms.GetProtocols().Count();
+		int numOfProtocols = dms.GetProtocols().Count;
 		// engine.GenerateInformation("DMSSanityChecks|Protocols: " + numOfProtocols);
 		results.Add("numOfProtocols", numOfProtocols.ToString());
 
@@ -367,10 +299,11 @@ public class Script
 		// engine.GenerateInformation("DMSSanityChecks|isOffloadEnabled: " + isOffloadEnabled);
 		results.Add("isOffloadEnabled", isOffloadEnabled.ToString());
 
-		File.WriteAllText(fullFileName,$"Metric{delimiter}" + $"Value{delimiter}" + "\r\n");
+		// File.AppendAllLines(fullFileName,$"Metric{delimiter}" + $"Value{delimiter}" + "\r\n");
 
 		File.AppendAllLines(fullFileName, results.Select(x => x.Key + delimiter + x.Value + delimiter));
 
+		// Send an email with the file output of this script
 		engine.SendSLNetMessage(
 		 new SendEmailMessage
 		 {
@@ -386,5 +319,20 @@ public class Script
 		 },
 		 },
 		 });
+	}
+
+	private static Dictionary<string, string> GetRteInfo(IDma dma)
+	{
+		// Get RTEs and HF_RTEs
+		Skyline.DataMiner.Net.Messages.ExecuteScriptMessage scriptRTEMessage = new ExecuteScriptMessage()
+		{
+			DataMinerID = dma.Id,// DMA ID
+			ScriptName = "GetRTEsandDumpsScript",
+			Options = new SA(new[] { $"DEFER:{bool.FalseString}" }),
+		};
+
+		var response_RTE = Engine.SLNet.SendSingleResponseMessage(scriptRTEMessage) as ExecuteScriptResponseMessage;
+		var scriptRTEResult = response_RTE?.ScriptOutput;
+		return scriptRTEResult;
 	}
 }
