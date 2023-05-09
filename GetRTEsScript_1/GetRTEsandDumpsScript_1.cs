@@ -89,8 +89,8 @@ namespace GetRTEsandDumpsScript_1
 				string.Join("\n", hf_rtelineList.Where(xhf => !string.IsNullOrEmpty(xhf))));
 
 			// Crashdumps and Minidumps
-			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 7);
-			int minidumpsCount = HelperClass.GetDumpsforLastDays("Mini", 7);
+			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 10);
+			int minidumpsCount = HelperClass.GetDumpsforLastDays("Mini", 10);
 
 			engine.AddScriptOutput("CrashDumps", crashdumpsCount.ToString());
 			engine.AddScriptOutput("MiniDumps", minidumpsCount.ToString());
