@@ -45,7 +45,7 @@ Revision History:
 
 DATE		VERSION		AUTHOR			COMMENTS
 
-dd/mm/2023	1.0.0.1		XXX, Skyline	Initial version
+09/05/2023	1.0.0.1		CCO, Skyline	Initial version
 ****************************************************************************
 */
 
@@ -53,14 +53,9 @@ namespace GetRTEsandDumpsScript_1
 {
 	using System;
 	using System.Collections.Generic;
-	using System.Globalization;
 	using System.IO;
 	using System.Linq;
-	using System.Text;
-	using System.Xml;
-
 	using Skyline.DataMiner.Automation;
-	using Skyline.DataMiner.Net.Messages;
 
 	/// <summary>
 	/// Represents a DataMiner Automation script.
@@ -76,10 +71,9 @@ namespace GetRTEsandDumpsScript_1
 			List<string> rtelineList;
 			rtelineList = new List<string>();
 
-			rtelineList = HelperClass.GetRTEs("RTE Count");
+			rtelineList = HelperClass.GetRTEs("OPEN RTE: Thread problem");
 			string string_numOfRTEs = rtelineList.Last();
 			int numOfRTEs = int.Parse(string_numOfRTEs);
-			// engine.GenerateInformation("DMSSanityChecks|numOfRTEs: " + numOfRTEs);
 
 			engine.AddScriptOutput("Rtes", numOfRTEs.ToString());
 
@@ -90,31 +84,22 @@ namespace GetRTEsandDumpsScript_1
 			List<string>hf_rtelineList;
 			hf_rtelineList = new List<string>();
 
-			hf_rtelineList = HelperClass.GetRTEs("HALFOPEN RTE");
+			hf_rtelineList = HelperClass.GetRTEs("HALFOPEN RTE: -");
 			string string_numOfHFRTEs = hf_rtelineList.Last();
 			int numOfHFRTEs = int.Parse(string_numOfHFRTEs);
-			// engine.GenerateInformation("DMSSanityChecks|numOfHFRTEs: " + numOfHFRTEs);
 
 			engine.AddScriptOutput("HalfOpenRtes", numOfHFRTEs.ToString());
 
-			StringBuilder hrtes = new StringBuilder();
-			foreach (string shf in hf_rtelineList)
-			{
-				if (shf != null)
-				{
-					hrtes.AppendLine($"{shf}");
-				}
-			}
-
-			engine.AddScriptOutput($"LineOfHalfOpenRtes", hrtes.ToString());
+			engine.AddScriptOutput(
+				$"LineOfHalfOpenRtes",
+				string.Join("\n", hf_rtelineList.Where(xhf => !string.IsNullOrEmpty(xhf))));
 
 			// Crashdumps and Minidumps
-			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 10);
-			int minidumpsCount = HelperClass.GetDumpsforLastDays("Mini", 10);
+			int crashdumpsCount = HelperClass.GetDumpsforLastDays("Crash", 7);
+			int minidumpsCount = HelperClass.GetDumpsforLastDays("Mini", 7);
 
 			engine.AddScriptOutput("CrashDumps", crashdumpsCount.ToString());
 			engine.AddScriptOutput("MiniDumps", minidumpsCount.ToString());
-
 		}
 
 		public class HelperClass
@@ -131,7 +116,6 @@ namespace GetRTEsandDumpsScript_1
 
 				using (StreamReader sr = new StreamReader(stream))
 				{
-					string previousLine = String.Empty;
 					while (!sr.EndOfStream)
 					{
 						string line = sr.ReadLine();
@@ -140,11 +124,9 @@ namespace GetRTEsandDumpsScript_1
 							if (dateTime >= startDate && dateTime <= endDate)
 							{
 								rteCount++;
-								saveRTEline.Add(previousLine);
+								saveRTEline.Add(line);
 							}
 						}
-
-						previousLine = line;
 					}
 				}
 
