@@ -101,6 +101,7 @@ public class Script
 			}
 		}
 
+		Directory.CreateDirectory(filePath);
 		var fullFileName = $"{filePath}{csvFileName}";
 		File.WriteAllText(fullFileName, header + "\r\n");
 		File.AppendAllLines(fullFileName, lines);
