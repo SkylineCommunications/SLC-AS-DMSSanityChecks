@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <DMSScript options="272" xmlns="http://www.skyline.be/automation">
-	<Name>SLC-AS-DMSSanityChecks</Name>
-	<Description>SanityCheck Script_1.0.0.1</Description>
+	<Name>GetRTEsandDumpsScript</Name>
+	<Description>GetRTEsandDumpsScript_1.0.0.1</Description>
 	<Type>Automation</Type>
 	<Author>SKYLINE2\CarolinaCO</Author>
 	<CheckSets>FALSE</CheckSets>
@@ -14,14 +14,11 @@
 	</Memory>
 
 	<Parameters>
-		<ScriptParameter id="2" type="string" values="">
-			<Description>E-mail Destination</Description>
-		</ScriptParameter>
 	</Parameters>
 
 	<Script>
 		<Exe id="1" type="csharp">
-			<Value><![CDATA[[Project:SLC-AS-DMSSanityChecks_1]]]></Value>
+			<Value><![CDATA[[Project:GetRTEsandDumpsScript_1]]]></Value>
 			<!--<Param type="debug">true</Param>-->
 			<Message></Message>
 		</Exe>

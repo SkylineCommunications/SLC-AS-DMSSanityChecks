@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{ABBAC058-A833-415D-B245-BADBF130DEE6}</ProjectGuid>
+    <ProjectGuid>{8082EC84-008A-498A-9767-F58DC5ED3731}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SLC_AS_DMSSanityChecks_1</RootNamespace>
-    <AssemblyName>SLC-AS-DMSSanityChecks_1</AssemblyName>
+    <RootNamespace>GetRTEsScript_1</RootNamespace>
+    <AssemblyName>GetRTEsScript_1</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <LangVersion>
@@ -24,7 +24,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>..\Internal\Code Analysis\qaction-debug.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\Debug\SLC-AS-DMSSanityChecks_1.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\GetRTEsandDumpsScript_1.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,7 +34,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>..\Internal\Code Analysis\qaction-release.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\Release\SLC-AS-DMSSanityChecks_1.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\GetRTEsandDumpsScript_1.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
@@ -46,34 +46,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HelperClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SLC-AS-DMSSanityChecks_1.cs" />
+    <Compile Include="GetRTEsandDumpsScript_1.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.3</Version>
-    </PackageReference>
-    <PackageReference Include="SharpZipLib">
-      <Version>1.4.2</Version>
-    </PackageReference>
     <PackageReference Include="Skyline.DataMiner.Dev.Automation">
-      <Version>10.3.4</Version>
-    </PackageReference>
-    <PackageReference Include="Skyline.DataMiner.Dev.Common">
-      <Version>10.3.4</Version>
-    </PackageReference>
-    <PackageReference Include="Skyline.DataMiner.Files.SLManagedAutomation">
-      <Version>10.3.4</Version>
-    </PackageReference>
-    <PackageReference Include="SLC.Lib.Automation">
-      <Version>1.4.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="SLC.Lib.Common">
-      <Version>1.4.0.1</Version>
+      <Version>10.1.0.6</Version>
     </PackageReference>
     <PackageReference Include="StyleCop.Analyzers">
       <Version>1.1.118</Version>
@@ -84,7 +62,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties DisLinkedXmlFile="..\SLC-AS-DMSSanityChecks.xml" DisProjectType="automationScriptProject" DisLinkId="1" />
+      <UserProperties DisLinkId="1" DisProjectType="automationScriptProject" DisLinkedXmlFile="..\GetRTEsScript.xml" />
     </VisualStudio>
   </ProjectExtensions>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
