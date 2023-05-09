@@ -66,12 +66,9 @@ namespace GetRTEsandDumpsScript_1
 		/// The script entry point.
 		/// </summary>
 		/// <param name="engine">Link with SLAutomation process.</param>
-		public void Run(IEngine engine)
+		public static void Run(IEngine engine)
 		{
-			List<string> rtelineList;
-			rtelineList = new List<string>();
-
-			rtelineList = HelperClass.GetRTEs("OPEN RTE: Thread problem");
+			List<string> rtelineList = HelperClass.GetRTEs("OPEN RTE: Thread problem");
 			string string_numOfRTEs = rtelineList.Last();
 			int numOfRTEs = int.Parse(string_numOfRTEs);
 
@@ -81,10 +78,7 @@ namespace GetRTEsandDumpsScript_1
 				$"LineOfRTEs",
 				string.Join("\n",rtelineList.Where(x => !string.IsNullOrEmpty(x))));
 
-			List<string>hf_rtelineList;
-			hf_rtelineList = new List<string>();
-
-			hf_rtelineList = HelperClass.GetRTEs("HALFOPEN RTE: -");
+			List<string> hf_rtelineList = HelperClass.GetRTEs("HALFOPEN RTE: -");
 			string string_numOfHFRTEs = hf_rtelineList.Last();
 			int numOfHFRTEs = int.Parse(string_numOfHFRTEs);
 
@@ -107,25 +101,21 @@ namespace GetRTEsandDumpsScript_1
 			public static List<string> GetRTEs(string isRTEorHF)
 			{
 				string logFile = @"C:\Skyline DataMiner\logging\SLWatchdog2.txt";
-				Stream stream = File.Open(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-				DateTime endDate = DateTime.Now;
-				DateTime startDate = endDate.AddDays(-10);
-				int rteCount = 0;
 				List<string> saveRTEline;
 				saveRTEline = new List<string>();
-
+				int rteCount = 0;
+				using (Stream stream = File.Open(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 				using (StreamReader sr = new StreamReader(stream))
 				{
+					DateTime endDate = DateTime.Now;
+					DateTime startDate = endDate.AddDays(-10);
 					while (!sr.EndOfStream)
 					{
 						string line = sr.ReadLine();
-						if (line.Contains(isRTEorHF) && DateTime.TryParse(line.Substring(0, 19), out DateTime dateTime))
+						if (line.Contains(isRTEorHF) && DateTime.TryParse(line.Substring(0, 19), out DateTime dateTime) && dateTime >= startDate && dateTime <= endDate)
 						{
-							if (dateTime >= startDate && dateTime <= endDate)
-							{
-								rteCount++;
-								saveRTEline.Add(line);
-							}
+							rteCount++;
+							saveRTEline.Add(line);
 						}
 					}
 				}
