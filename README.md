@@ -10,5 +10,4 @@ This csv file contains information of each DMA of the DMS and general informatio
 Besides there is also the possibility of sending an email in the end with the above-mentioned csv file as attachement.
 
 Special cases:
-- if you get a -1 in the Alarms related fields, for example in the number of Active Alarms or in the number of Errors, it means that the value was not correctly retrieved, possibly 
 - if you get a -1000 in the crashdumps or minidumps count, it means that the corresponding directory could not be found
