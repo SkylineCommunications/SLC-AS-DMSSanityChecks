@@ -45,25 +45,14 @@
 			return userNodes.Count;
 		}
 
-		public static int GetActiveAlarms(Engine engine)
+		public static AlarmEventMessage[] GetActiveAlarms(Engine engine)
 		{
 			DMSMessage[] responses = engine.SendSLNetMessage(new GetActiveAlarmsMessage());
 			var firstMessage = (ActiveAlarmsResponseMessage)responses.FirstOrDefault();
 			if (firstMessage == null)
-				return -1;
+				return new AlarmEventMessage[0];
 
-			return firstMessage.ActiveAlarms.Count(x => x.Source == "DataMiner System");
-		}
-
-		// method used to calculate all the alarms types counts (Errors, Timeouts, Critical, Major, Minor, Warning)
-		public static int GetTypeActiveAlarms(Engine engine, string alarmtype)
-		{
-			DMSMessage[] responses = engine.SendSLNetMessage(new GetActiveAlarmsMessage());
-			var firstMessage = (ActiveAlarmsResponseMessage)responses.FirstOrDefault();
-			if (firstMessage == null)
-				return -1;
-
-			return firstMessage.ActiveAlarms.Count(x => x.Severity == alarmtype);
+			return firstMessage.ActiveAlarms;
 		}
 	}
 }

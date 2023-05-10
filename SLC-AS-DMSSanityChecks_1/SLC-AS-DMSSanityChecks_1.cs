@@ -109,14 +109,16 @@ public class Script
 		results.Add("  ", String.Empty);
 		results.Add("DMS", "Detailed Information about the DMS");
 
-		results.Add("numOfActiveAlarms", HelperClass.GetActiveAlarms(engine).ToString());
-		results.Add("numOfError", HelperClass.GetTypeActiveAlarms(engine, "Error").ToString());
-		results.Add("numOfTimeout", HelperClass.GetTypeActiveAlarms(engine, "Timeout").ToString());
-		results.Add("numOfCritical", HelperClass.GetTypeActiveAlarms(engine, "Critical").ToString());
-		results.Add("numOfMajor", HelperClass.GetTypeActiveAlarms(engine, "Major").ToString());
-		results.Add("numOfMinor", HelperClass.GetTypeActiveAlarms(engine, "Minor").ToString());
-		results.Add("numOfWarning", HelperClass.GetTypeActiveAlarms(engine, "Warning").ToString());
-		results.Add("numOfNotices", HelperClass.GetTypeActiveAlarms(engine, "Notice").ToString());
+		var activealarms = HelperClass.GetActiveAlarms(engine);
+
+		results.Add("numOfActiveAlarms", activealarms.Count(x => x.Source == "DataMiner System").ToString());
+		results.Add("numOfError", activealarms.Count(x => x.Severity == "Error").ToString());
+		results.Add("numOfTimeout", activealarms.Count(x => x.Severity == "Timeout").ToString());
+		results.Add("numOfCritical", activealarms.Count(x => x.Severity == "Critical").ToString());
+		results.Add("numOfMajor", activealarms.Count(x => x.Severity == "Major").ToString());
+		results.Add("numOfMinor", activealarms.Count(x => x.Severity == "Minor").ToString());
+		results.Add("numOfWarning", activealarms.Count(x => x.Severity == "Warning").ToString());
+		results.Add("numOfNotices", activealarms.Count(x => x.Severity == "Notice").ToString());
 		results.Add("numOfProtocols", dms.GetProtocols().Count.ToString());
 		results.Add("numOfUsers", HelperClass.GetnumOfUsers().ToString());
 		results.Add("isOffloadEnabled", HelperClass.IsDbOffloadEnabled().ToString());
