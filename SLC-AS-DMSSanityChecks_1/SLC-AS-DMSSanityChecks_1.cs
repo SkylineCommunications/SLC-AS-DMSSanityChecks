@@ -125,22 +125,30 @@ public class Script
 
 		File.AppendAllLines(fullFileName, results.Select(x => x.Key + Delimiter + x.Value + Delimiter));
 
-		// Send an email with the file output of this script
-		engine.SendSLNetMessage(
-		 new SendEmailMessage
-		 {
-			 To = emailToSend,
-			 Body = $"Automation Script - Sanity Checks",
-			 IsHtml = false,
-			 Attachments = new[]
+		try
+		{
+			// Send an email with the file output of this script
+			engine.SendSLNetMessage(
+			 new SendEmailMessage
 			 {
+				 To = emailToSend,
+				 Body = "Automation Script - Sanity Checks",
+				 IsHtml = false,
+				 Attachments = new[]
+				 {
 				 new EmailAttachment
 				 {
 					 Data = File.ReadAllBytes(fullFileName),
 					 FileName = csvFileName,
 				 },
-			 },
-		 });
+				 },
+			 });
+		}
+		catch (DataMinerCOMException)
+		{
+			engine.GenerateInformation($"There was an issue with sending an email. Email not sent.");
+		}
+
 	}
 
 	private static Dictionary<string, string> GetRteInfo(IDma dma)
