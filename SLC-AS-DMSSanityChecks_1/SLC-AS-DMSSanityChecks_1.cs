@@ -146,7 +146,11 @@ public class Script
 		}
 		catch (DataMinerCOMException)
 		{
-			engine.GenerateInformation($"There was an issue with sending an email. Email not sent.");
+			engine.GenerateInformation($"There was an issue with sending an email. Email not sent. Please check your connection.");
+		}
+		catch (DataMinerException)
+		{
+			engine.GenerateInformation($"There was an issue with sending an email. Email not sent. Please check if the email is valid.");
 		}
 
 	}
