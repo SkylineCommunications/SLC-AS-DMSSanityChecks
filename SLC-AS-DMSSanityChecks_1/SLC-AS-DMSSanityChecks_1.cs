@@ -57,6 +57,7 @@ using Helpers;
 using Skyline.DataMiner.Automation;
 using Skyline.DataMiner.Library.Automation;
 using Skyline.DataMiner.Library.Common;
+using Skyline.DataMiner.Net;
 using Skyline.DataMiner.Net.Exceptions;
 using Skyline.DataMiner.Net.Messages;
 
@@ -70,7 +71,9 @@ public class Script
 	private static readonly DateTime Datenow = DateTime.Now;
 	private readonly string csvFileName = $"DMSSanityChecks_{Datenow.Day}_{Datenow.Month}_{Datenow.Year} {Datenow.Hour}h{Datenow.Minute}m.csv";
 	private readonly string filePath = @"C:\Skyline DataMiner\Documents\DMA_COMMON_DOCUMENTS\DMSSanityChecks\";
-
+	private string subId;
+	private Dictionary<int, TimeSpan> uptimes;
+	
 	/// <summary>
 	/// The Script entry point.
 	/// </summary>
@@ -81,9 +84,12 @@ public class Script
 		var dms = engine.GetDms();
 		var dmas = dms.GetAgents();
 		var emailToSend = engine.GetScriptParam("E-mail Destination").Value;
+		int i = 0;
+		List<TimeSpan> dmaUptimes = GetDmaUptime(engine);
+
 		results.Add(" ", String.Empty);
 
-		var header = $"Hostname,DMA_ID,Version,Nr Elements,Nr Services,Nr RTEs,Nr Half Open, Nr Crash Dumps, Nr of Mini Dumps, Line of RTE, Line of Half Open";
+		var header = $"Hostname,DMA_ID,Version, DMA Uptime, Nr Elements,Nr Services,Nr RTEs,Nr Half Open, Nr Crash Dumps, Nr of Mini Dumps, Line of RTE, Line of Half Open";
 		var lines = new List<string>();
 
 		foreach (var dma in dmas)
@@ -91,9 +97,11 @@ public class Script
 			try
 			{
 				var rte = GetRteInfo(dma);
+				var stringdmauptimes = dmaUptimes[i].ToString("d'd 'h'h 'm'm 's's'");
 
 				// engine.GenerateInformation(string.Join(";", rte.Keys));
-				lines.Add($"{dma.HostName},{dma.Id},{dma.VersionInfo},{dma.GetElements().Count},{dma.GetServices().Count},{rte["Rtes"]},{rte["HalfOpenRtes"]},{rte["CrashDumps"]},{rte["MiniDumps"]},{rte[$"LineOfRTEs"]},{rte[$"LineOfHalfOpenRtes"]}");
+				lines.Add($"{dma.HostName},{dma.Id},{dma.VersionInfo},{stringdmauptimes},{dma.GetElements().Count},{dma.GetServices().Count},{rte["Rtes"]},{rte["HalfOpenRtes"]},{rte["CrashDumps"]},{rte["MiniDumps"]},{rte[$"LineOfRTEs"]},{rte[$"LineOfHalfOpenRtes"]}");
+				i++;
 			}
 			catch (DataMinerCommunicationException)
 			{
@@ -168,5 +176,36 @@ public class Script
 		var response_RTE = Engine.SLNet.SendSingleResponseMessage(scriptRTEMessage) as ExecuteScriptResponseMessage;
 		var scriptRTEResult = response_RTE?.ScriptOutput;
 		return scriptRTEResult;
+	}
+
+	private void HandleMessage(object sender, NewMessageEventArgs newevent)
+	{
+		if (!newevent.FromSet(subId))
+		{
+			return;
+		}
+
+		if (newevent.Message is DataMinerPerformanceInfoEventMessage performanceMessage)
+		{
+			uptimes[performanceMessage.DataMinerID] = DateTime.Now - performanceMessage.StartupTime;
+		}
+	}
+
+	private List<TimeSpan> GetDmaUptime(Engine engine)
+	{
+		subId = Guid.NewGuid().ToString();
+		uptimes = new Dictionary<int, TimeSpan>();
+		IConnection connection = Engine.SLNetRaw;
+		connection.OnNewMessage += HandleMessage;
+		connection.AddSubscription(subId, new SubscriptionFilter(typeof(DataMinerPerformanceInfoEventMessage)));
+
+		engine.Sleep(5000);
+
+		connection.OnNewMessage -= HandleMessage;
+		connection.RemoveSubscription(subId);
+
+		var dmauptimesToList = uptimes.Values.ToList();
+
+		return dmauptimesToList;
 	}
 }
