@@ -156,6 +156,10 @@ public class Script
 		{
 			engine.GenerateInformation($"There was an issue with sending an email. Email not sent. Please check your connection.");
 		}
+		catch (DataMinerSecurityException)
+		{
+			engine.GenerateInformation($"There was an issue with sending an email. Email not sent. Missing permission. Not allowed to Send email.");
+		}
 		catch (DataMinerException)
 		{
 			engine.GenerateInformation($"There was an issue with sending an email. Email not sent. Please check if the email is valid.");
