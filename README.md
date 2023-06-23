@@ -13,7 +13,7 @@ If you specify "-1" for the email, then the file will also not be generated but 
 
 ![Sanity Checks Request](/Documentation/SanityChecks_Request.png)
 
-![Sanity Checks Response](/Documentation/SanityChecks_Response.png)
+![Sanity Checks Response](/Documentation/SanityChecks_Result.png)
 
 Special cases:
 - if you get a -1000 in the crashdumps or minidumps count, it means that the corresponding directory could not be found
