@@ -53,13 +53,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using AdaptiveCards;
 using Helpers;
+using Newtonsoft.Json;
 using Skyline.DataMiner.Automation;
-using Skyline.DataMiner.Library.Automation;
-using Skyline.DataMiner.Library.Common;
+using Skyline.DataMiner.Core.DataMinerSystem.Automation;
+using Skyline.DataMiner.Core.DataMinerSystem.Common;
 using Skyline.DataMiner.Net;
 using Skyline.DataMiner.Net.Exceptions;
 using Skyline.DataMiner.Net.Messages;
+using Skyline.DataMiner.Net.Messages.SLDataGateway;
 
 /// <summary>
 /// DataMiner Script Class.
@@ -83,7 +87,10 @@ public class Script
 		Dictionary<string, string> results = new Dictionary<string, string>();
 		var dms = engine.GetDms();
 		var dmas = dms.GetAgents();
+
 		var emailToSend = engine.GetScriptParam("E-mail Destination").Value;
+		var sendEmail = emailToSend != "-1";
+
 		int i = 0;
 		List<TimeSpan> dmaUptimes = GetDmaUptime(engine);
 
@@ -91,6 +98,8 @@ public class Script
 
 		var header = $"Hostname,DMA_ID,Version, DMA Uptime, Nr Elements,Nr Services,Nr RTEs,Nr Half Open, Nr Crash Dumps, Nr of Mini Dumps, Line of RTE, Line of Half Open";
 		var lines = new List<string>();
+
+		var adaptiveCardBody = new List<AdaptiveElement>();
 
 		foreach (var dma in dmas)
 		{
@@ -102,17 +111,29 @@ public class Script
 				// engine.GenerateInformation(string.Join(";", rte.Keys));
 				lines.Add($"{dma.HostName},{dma.Id},{dma.VersionInfo},{stringdmauptimes},{dma.GetElements().Count},{dma.GetServices().Count},{rte["Rtes"]},{rte["HalfOpenRtes"]},{rte["CrashDumps"]},{rte["MiniDumps"]},{rte[$"LineOfRTEs"]},{rte[$"LineOfHalfOpenRtes"]}");
 				i++;
+
+				adaptiveCardBody.Add(new AdaptiveTextBlock($"Info for {dma.HostName} [{dma.Id}]") { Type = "TextBlock", Weight = AdaptiveTextWeight.Bolder });
+				adaptiveCardBody.Add(new AdaptiveFactSet
+				{
+					Type = "FactSet",
+					Facts = new List<AdaptiveFact>
+					{
+						new AdaptiveFact("Version", dma.VersionInfo),
+						new AdaptiveFact("Up time", stringdmauptimes),
+						new AdaptiveFact("Number of elements", dma.GetElements().Count.ToString()),
+						new AdaptiveFact("Number of services", dma.GetServices().Count.ToString()),
+						new AdaptiveFact("Number of RTEs", rte["Rtes"]),
+						new AdaptiveFact("Number of half open RTEs", rte["HalfOpenRtes"]),
+						new AdaptiveFact("Number of crashdumps", rte["CrashDumps"]),
+						new AdaptiveFact("Number of minidumps", rte["MiniDumps"]),
+					},
+				});
 			}
 			catch (DataMinerCommunicationException)
 			{
 				engine.GenerateInformation($"DataMiner ID {dma.Id} is not available");
 			}
 		}
-
-		Directory.CreateDirectory(filePath);
-		var fullFileName = $"{filePath}{csvFileName}";
-		File.WriteAllText(fullFileName, header + "\r\n");
-		File.AppendAllLines(fullFileName, lines);
 
 		results.Add("  ", String.Empty);
 		results.Add("DMS", "Detailed Information about the DMS");
@@ -131,26 +152,55 @@ public class Script
 		results.Add("numOfUsers", HelperClass.GetnumOfUsers().ToString());
 		results.Add("isOffloadEnabled", HelperClass.IsDbOffloadEnabled().ToString());
 
-		File.AppendAllLines(fullFileName, results.Select(x => x.Key + Delimiter + x.Value + Delimiter));
+		adaptiveCardBody.Add(new AdaptiveTextBlock($"Info for DMS") { Type = "TextBlock", Weight = AdaptiveTextWeight.Bolder });
+		adaptiveCardBody.Add(new AdaptiveFactSet
+		{
+			Type = "FactSet",
+			Facts = new List<AdaptiveFact>
+			{
+				new AdaptiveFact("Number of active alarms", activealarms.Count(x => x.Source == "DataMiner System").ToString()),
+				new AdaptiveFact("Number of errors", activealarms.Count(x => x.Severity == "Error").ToString()),
+				new AdaptiveFact("Number of timeouts", activealarms.Count(x => x.Severity == "Timeout").ToString()),
+				new AdaptiveFact("Number of criticals", activealarms.Count(x => x.Severity == "Critical").ToString()),
+				new AdaptiveFact("Number of majors", activealarms.Count(x => x.Severity == "Major").ToString()),
+				new AdaptiveFact("Number of minors", activealarms.Count(x => x.Severity == "Minor").ToString()),
+				new AdaptiveFact("Number of warnings", activealarms.Count(x => x.Severity == "Warning").ToString()),
+				new AdaptiveFact("Number of notices", activealarms.Count(x => x.Severity == "Notice").ToString()),
+				new AdaptiveFact("Number of protocols", dms.GetProtocols().Count.ToString()),
+				new AdaptiveFact("Number of users", HelperClass.GetnumOfUsers().ToString()),
+				new AdaptiveFact("Is DB offload enabled", HelperClass.IsDbOffloadEnabled().ToString()),
+			},
+		});
+
+		engine.AddScriptOutput("AdaptiveCard", JsonConvert.SerializeObject(adaptiveCardBody));
 
 		try
 		{
-			// Send an email with the file output of this script
-			engine.SendSLNetMessage(
-			 new SendEmailMessage
-			 {
-				 To = emailToSend,
-				 Body = "Automation Script - Sanity Checks",
-				 IsHtml = false,
-				 Attachments = new[]
+			Directory.CreateDirectory(filePath);
+			var fullFileName = $"{filePath}{csvFileName}";
+			File.WriteAllText(fullFileName, header + "\r\n");
+			File.AppendAllLines(fullFileName, lines);
+			File.AppendAllLines(fullFileName, results.Select(x => x.Key + Delimiter + x.Value + Delimiter));
+
+			if (sendEmail)
+			{
+				// Send an email with the file output of this script
+				engine.SendSLNetMessage(
+				 new SendEmailMessage
 				 {
-				 new EmailAttachment
-				 {
-					 Data = File.ReadAllBytes(fullFileName),
-					 FileName = csvFileName,
-				 },
-				 },
-			 });
+					 To = emailToSend,
+					 Body = "Automation Script - Sanity Checks",
+					 IsHtml = false,
+					 Attachments = new[]
+					 {
+						 new EmailAttachment
+						 {
+							 Data = File.ReadAllBytes(fullFileName),
+							 FileName = csvFileName,
+						 },
+					 },
+				 });
+			}
 		}
 		catch (DataMinerCOMException)
 		{
@@ -164,7 +214,6 @@ public class Script
 		{
 			engine.GenerateInformation($"There was an issue with sending an email. Email not sent. Please check if the email is valid.");
 		}
-
 	}
 
 	private static Dictionary<string, string> GetRteInfo(IDma dma)
